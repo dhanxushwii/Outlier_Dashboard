@@ -19,14 +19,14 @@ st.markdown("""
     .algo-group { background-color: #717D7E; padding: 8px; border-radius: 4px; margin-bottom: 4px; }
     .algo-group strong { color: white; font-size: 16px; }
     /* Explore button */
-             .stButton>button {
-            height: 2.8rem;
-            width: 100%;
-            font-weight: 500;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 0 !important;
-        }
+    .stButton>button {
+        height: 2.8rem;
+        width: 100%;
+        font-weight: 500;
+        background-color: #3b82f6;
+        color: white;
+        border-radius: 0 !important;
+    }
     .stButton>button[key="continue_btn"] {
         border-radius: 12px !important;
         margin-top: 20px !important;
@@ -48,7 +48,7 @@ df_algorithms_full = {
     "HBOS": "Histogram-based Outlier Score",
     "KNN": "K-Nearest Neighbors",
     "LOF": "Local Outlier Factor",
-    "DBSCAN": "Density-based Spatial Clustering of Applications with Noise",
+    "DBSCA": "Density-based Spatial Clustering of Applications with Noise",
     "ABOD": "Angle-based Outlier Detector",
     "GMM": "Gaussian Mixture Model",
     "KDE": "Kernel Density Estimation",
@@ -65,7 +65,7 @@ df_algorithms_full = {
 }
 
 categories = {
-    "Proximity-based": ["CBLOF", "HBOS", "KNN", "LOF", "DBSCAN"],
+    "Proximity-based": ["CBLOF", "HBOS", "KNN", "LOF", "DBSCA"],
     "Probabilistic": ["ABOD", "GMM", "KDE", "ECOD", "COPOD"],
     "Ensembles": ["FB", "IForest", "LSCP", "INNE"],
     "Linear Models": ["MCD", "OCSVM", "PCA", "LMDD"]
@@ -73,6 +73,7 @@ categories = {
 key_map = {k: v for k, v in zip(categories.keys(), ["proximity", "probabilistic", "ensemble", "linear"]) }
 
 col1, col2, col3, col4 = st.columns([2, 4, 1.5, 1.5])
+
 
 with col1:
     st.markdown("<div class='highlight-header'>Dataset Selection</div>", unsafe_allow_html=True)
@@ -92,24 +93,26 @@ with col1:
 selected_algos = {}
 with col2:
     st.markdown("<div class='highlight-header'>Algorithm Selection</div>", unsafe_allow_html=True)
-    for group, algos in categories.items():
-        st.markdown(f"<div class='algo-group'><strong>{group}</strong>", unsafe_allow_html=True)
-        keys = [f"{group}-{a}" for a in algos]
-        count = sum(st.session_state.get(k, False) for k in keys)
-        cols = st.columns(len(algos))
-        picks = []
-        for i, algo in enumerate(algos):
-            k = f"{group}-{algo}"
-            val = cols[i].checkbox(
-                algo,
-                key=k,
-                help=df_algorithms_full[algo],
-                disabled=(count >= 2 and not st.session_state.get(k))
-            )
-            if val:
-                picks.append(algo)
-        selected_algos[key_map[group]] = picks
-        st.markdown("</div>", unsafe_allow_html=True)
+    inner_cols = st.columns(len(categories))
+    for idx, (group, algos) in enumerate(categories.items()):
+        with inner_cols[idx]:
+            st.markdown(f"<div class='algo-group'><strong>{group}</strong></div>", unsafe_allow_html=True)
+            # enforce max 2 selected
+            keys = [f"{group}-{a}" for a in algos]
+            count = sum(st.session_state.get(k, False) for k in keys)
+            picks = []
+            for algo in algos:
+                k = f"{group}-{algo}"
+                checked = st.checkbox(
+                    label=algo,
+                    key=k,
+                    help=df_algorithms_full[algo],
+                    disabled=(count >= 2 and not st.session_state.get(k)),
+                    label_visibility="visible"
+                )
+                if checked:
+                    picks.append(algo)
+            selected_algos[key_map[group]] = picks
 
 with col3:
     st.markdown("<div class='highlight-header'>Heatmap Techniques</div>", unsafe_allow_html=True)
@@ -140,11 +143,10 @@ _, c1, _ = st.columns([1, 1, 1])
 with c1:
     if st.button("Explore", key="continue_btn"):
         if all(len(v) == 2 for v in selected_algos.values()):
-            st.session_state['dataset'] = dataset
-            st.session_state['algorithms'] = selected_algos
-            st.session_state['heatmap_type'] = heatmap_type
-            st.session_state['confirmed'] = True
+            st.session_state['dataset']     = dataset
+            st.session_state['algorithms']  = selected_algos
+            st.session_state['heatmap_type']= heatmap_type
+            st.session_state['confirmed']   = True
             st.switch_page("pages/heatmap_page.py")
         else:
             st.error("Select exactly two algorithms per category before continuing.")
-
