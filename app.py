@@ -1,4 +1,3 @@
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -7,9 +6,7 @@ from sklearn.decomposition import PCA
 
 from utils.dataset_loader import load_dataset
 
-
 st.set_page_config(page_title="Outlier Dashboard", layout="wide")
-
 
 st.markdown("""
 <style>
@@ -38,12 +35,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Session State Initialization ---
-for key, default in [("dataset", None), ("algorithms", {}), ("heatmap_type", None), ("colormap", "viridis"), ("confirmed", False)]:
+for key, default in [
+    ("dataset", None),
+    ("algorithms", {}),
+    ("heatmap_type", None),
+    ("colormap", "viridis"),
+    ("confirmed", False)
+]:
     if key not in st.session_state:
         st.session_state[key] = default
 
 # --- Header ---
-st.markdown("<h2 style='text-align:center; margin-bottom:1rem;'>Toward an Outlier Uncertainty Model – A Comparative Analysis</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;'>Toward an Outlier Uncertainty Model – A Comparative Analysis</h2>", unsafe_allow_html=True)
 
 # --- Algorithm Metadata ---
 df_algorithms_full = {
@@ -75,6 +78,14 @@ categories = {
 }
 key_map = {k: v for k, v in zip(categories.keys(), ["proximity", "probabilistic", "ensemble", "linear"])}
 
+# --- Callback to clear algorithm selections on dataset change ---
+def reset_algos():
+    for group, algos in categories.items():
+        for algo in algos:
+            st.session_state[f"{group}-{algo}"] = False
+    st.session_state["algorithms"] = {}
+    st.session_state["confirmed"] = False
+
 # --- Main Layout ---
 col1, col2, col3, col4 = st.columns([2, 4, 1.5, 1.5])
 
@@ -95,48 +106,38 @@ with col1:
             "PIRSensor",
             "Students"
         ],
+        key="dataset_select",
+        on_change=reset_algos,
         label_visibility="collapsed"
     )
 
     if dataset:
         try:
             df = load_dataset(dataset)
-
-            # Convert to numeric only
-            df_numeric = df.select_dtypes(include=[np.number])
-
-            # Drop rows with NaNs
-            df_numeric = df_numeric.dropna()
+            df_numeric = df.select_dtypes(include=[np.number]).dropna()
 
             if df_numeric.shape[0] >= 2 and df_numeric.shape[1] >= 2:
                 X2 = PCA(n_components=2).fit_transform(df_numeric.values)
-
-                # Normalize and add tiny jitter
                 X2 = X2 / np.max(np.abs(X2))
                 X2 += np.random.normal(0, 0.015, size=X2.shape)
 
                 fig, ax = plt.subplots(figsize=(5, 4))
                 ax.scatter(X2[:, 0], X2[:, 1], s=6, color='#3b82f6', alpha=0.7, edgecolors='none')
-                x_padding = (X2[:, 0].max() - X2[:, 0].min()) * 0.1
-                y_padding = (X2[:, 1].max() - X2[:, 1].min()) * 0.1
-                ax.set_xlim(X2[:, 0].min() - x_padding, X2[:, 0].max() + x_padding)
-                ax.set_ylim(X2[:, 1].min() - y_padding, X2[:, 1].max() + y_padding)
-                ax.set_xticks([])
-                ax.set_yticks([])
+                x_pad = (X2[:, 0].max() - X2[:, 0].min()) * 0.1
+                y_pad = (X2[:, 1].max() - X2[:, 1].min()) * 0.1
+                ax.set_xlim(X2[:, 0].min() - x_pad, X2[:, 0].max() + x_pad)
+                ax.set_ylim(X2[:, 1].min() - y_pad, X2[:, 1].max() + y_pad)
+                ax.set_xticks([]); ax.set_yticks([])
                 ax.set_title(f"PCA Scatter of {dataset}")
                 st.pyplot(fig, use_container_width=True)
-
             else:
-                # Fallback random scatter if PCA not possible
                 st.warning(f"No usable numeric features for PCA in {dataset}. Showing random scatter instead.")
-                n_samples = len(df)
-                x = np.random.uniform(low=-1, high=1, size=n_samples)
-                y = np.random.uniform(low=-1, high=1, size=n_samples)
-
+                n = len(df)
+                x = np.random.uniform(-1, 1, n)
+                y = np.random.uniform(-1, 1, n)
                 fig, ax = plt.subplots(figsize=(5, 4))
                 ax.scatter(x, y, s=6, color='blue', alpha=0.7, edgecolors='none')
-                ax.set_xticks([])
-                ax.set_yticks([])
+                ax.set_xticks([]); ax.set_yticks([])
                 ax.set_title(f"Random Scatter of {dataset}")
                 st.pyplot(fig, use_container_width=True)
 
@@ -151,16 +152,15 @@ with col2:
     for idx, (group, algos) in enumerate(categories.items()):
         with inner_cols[idx]:
             st.markdown(f"<div class='algo-group'><strong>{group}</strong></div>", unsafe_allow_html=True)
-            keys = [f"{group}-{a}" for a in algos]
-            count = sum(st.session_state.get(k, False) for k in keys)
+            count = sum(st.session_state.get(f"{group}-{a}", False) for a in algos)
             picks = []
             for algo in algos:
-                k = f"{group}-{algo}"
+                key = f"{group}-{algo}"
                 checked = st.checkbox(
                     label=algo,
-                    key=k,
+                    key=key,
                     help=df_algorithms_full[algo],
-                    disabled=(count >= 2 and not st.session_state.get(k)),
+                    disabled=(count >= 2 and not st.session_state.get(key)),
                     label_visibility="visible"
                 )
                 if checked:
@@ -172,37 +172,70 @@ with col3:
     st.markdown("<div class='highlight-header'>Heatmap Techniques</div>", unsafe_allow_html=True)
     heatmap_type = st.radio(
         "",
-        ["raw", "threshold", "interpolated", "binary", "ranked"],
-        label_visibility="collapsed"
+        ["raw", "threshold", "interpolated", "binary", "ranked"],      # these are your real values
+        label_visibility="collapsed",
+        format_func=lambda s: s.capitalize()                           # only changes how they look
     )
+
 
 # === Colormap Section ===
 with col4:
     st.markdown("<div class='highlight-header'>Colormap</div>", unsafe_allow_html=True)
+
     cmaps = ["viridis", "plasma", "inferno", "magma", "cividis", "coolwarm", "turbo"]
+
+    st.markdown("""
+    <style>
+      /* round the little square into a circle */
+      div.stCheckbox > label > div[data-baseweb="checkbox"] > input[type="checkbox"] {
+          border-radius: 50% !important;
+      }
+    </style>
+    """, unsafe_allow_html=True)
+
+    def select_cmap(chosen):
+        st.session_state["colormap"] = chosen
+        for other in cmaps:
+            if other != chosen:
+                st.session_state[f"cb_{other}"] = False
+
     for cmap in cmaps:
-        def on_cb(c=cmap):
-            st.session_state['colormap'] = c
-        chk = (st.session_state['colormap'] == cmap)
         cb_col, bar_col, _ = st.columns([0.5, 3, 0.5])
-        cb_col.checkbox("", value=chk, key=f"cb_{cmap}", on_change=on_cb, label_visibility="collapsed")
+        cb_col.checkbox(
+            label="",
+            key=f"cb_{cmap}",
+            value=(st.session_state["colormap"] == cmap),
+            on_change=select_cmap,
+            args=(cmap,),
+            label_visibility="collapsed"
+        )
+
+       
         fig, ax = plt.subplots(figsize=(3, 0.3), dpi=100)
         gradient = np.linspace(0, 1, 256).reshape(1, -1)
-        ax.imshow(gradient, aspect='auto', cmap=cmap)
-        ax.axis('off')
+        ax.imshow(gradient, aspect="auto", cmap=cmap)
+        ax.axis("off")
         fig.tight_layout(pad=0)
         bar_col.pyplot(fig, use_container_width=True)
         plt.close(fig)
 
-# === Continue Button ===
-_, c1, _ = st.columns([1, 1, 1])
-with c1:
-    if st.button("Explore", key="continue_btn"):
-        if all(len(v) == 2 for v in selected_algos.values()):
-            st.session_state['dataset'] = dataset
-            st.session_state['algorithms'] = selected_algos
-            st.session_state['heatmap_type'] = heatmap_type
-            st.session_state['confirmed'] = True
-            st.switch_page("pages/heatmap_page.py")
-        else:
-            st.error("Select exactly two algorithms per category before continuing.")
+        bar_col.markdown(
+            f"<div style='text-align:center; margin-top:-10px; font-size:0.9rem;'>"
+            f"{cmap.capitalize()}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+
+
+
+# === Explore Button (disabled until 2 algos/category) ===
+explore_disabled = not all(len(v) == 2 for v in selected_algos.values())
+_, mid_col, _ = st.columns([1, 1, 1])
+with mid_col:
+    if st.button("Explore", key="continue_btn", disabled=explore_disabled):
+        st.session_state["dataset"] = st.session_state["dataset_select"]
+        st.session_state["algorithms"] = selected_algos
+        st.session_state["heatmap_type"] = heatmap_type
+        st.session_state["confirmed"] = True
+        st.switch_page("pages/heatmap_page.py")
