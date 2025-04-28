@@ -28,3 +28,14 @@ def apply_heatmap_style(scores, style):
 
     else:
         raise ValueError(f"Unknown heatmap style: {style}")
+
+
+
+
+
+
+
+
+
+
+
