@@ -298,7 +298,7 @@ if st.session_state.get("confirmed"):
                 algo,
                 pad=8,
                 fontsize=8,
-                color="black",
+                color="white",
                 weight="bold"
             )
             fig.subplots_adjust(left=0, right=1, top=0.80, bottom=0.01)
@@ -340,7 +340,8 @@ if st.session_state.get("confirmed"):
                         st.error(f"{algo} failed: {e}")
 
         with cols[-1]:
-            fig, ax = plt.subplots(figsize=(0.9, 2.1), dpi=100)
+            fig, ax = plt.subplots(figsize=(0.9, 3.29), dpi=100) #height adjust
+
             grad = np.linspace(0,1,256).reshape(256,1)
             ax.imshow(grad[::-1], aspect="auto",
                       cmap=st.session_state["colormap"],
@@ -353,7 +354,7 @@ if st.session_state.get("confirmed"):
                 transform=ax.transAxes,
                 ha="center", va="bottom",
                 fontsize=6,
-                color="black"
+                color="white"
             )
             ax.text(
                 0.5, -0.02,
@@ -361,7 +362,7 @@ if st.session_state.get("confirmed"):
                 transform=ax.transAxes,
                 ha="center", va="top",
                 fontsize=6,
-                color="black"
+                color="white"
             )
             for s in ax.spines.values():
                 s.set_visible(False)
