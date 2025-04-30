@@ -99,6 +99,16 @@ def reset_algos():
     st.session_state["algorithms"] = {}
     st.session_state["confirmed"] = False
 
+
+    st.session_state["heatmap_type"] = None
+    st.session_state["colormap"] = None
+
+
+    for cmap in ["viridis", "plasma", "terrain", "coolwarm", "turbo"]:
+        st.session_state[f"cb_{cmap}"] = False
+
+
+
 col1, col2, col3, col4 = st.columns([2, 4, 1.5, 1.5])
 
 with col1:
@@ -166,19 +176,25 @@ with col2:
                 if checked:
                     picks.append(algo)
             selected_algos[key_map[group]] = picks
+            if len(picks) != 2:
+                st.markdown(
+                "<div style='color: #facc15; font-size: 0.85rem; margin-top: 4px;'>⚠️ Pick 2 algorithms</div>",
+                unsafe_allow_html=True
+            )
 
 with col3:
     st.markdown("<div class='highlight-header'>Heatmap Techniques</div>", unsafe_allow_html=True)
     heatmap_type = st.radio(
         "",
         ["raw", "threshold", "interpolated", "binary", "ranked"],
+        key="heatmap_type", 
         label_visibility="collapsed",
         format_func=lambda s: s.capitalize()
     )
 
 with col4:
     st.markdown("<div class='highlight-header'>Colormap</div>", unsafe_allow_html=True)
-    cmaps = ["viridis", "plasma", "inferno", "coolwarm", "turbo"]
+    cmaps = ["viridis", "plasma", "terrain", "coolwarm", "turbo"]
 
     st.markdown("""
     <style>
@@ -225,6 +241,7 @@ def explore_callback(sel_algos, hm_type):
             st.session_state[f"{group}-{algo}"] = False
 
 explore_disabled = not all(len(v) == 2 for v in selected_algos.values())
+
 _, mid_col, _ = st.columns([1, 1, 1])
 with mid_col:
     st.button(
