@@ -36,6 +36,16 @@ st.markdown("""
         margin-left: auto !important;
         margin-right: auto !important;
     }
+    .stButton>button:disabled {
+        pointer-events: auto !important;
+        background-color: #93c5fd !important;
+        color: white !important;
+        cursor: not-allowed !important;
+        opacity: 1 !important;
+    }
+    .stButton>button:disabled:hover {
+        background-color: #3b82f6 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -117,7 +127,7 @@ with col1:
         "Choose Dataset",
         [
             "AirQualityUCI", "Bank", "BeijingClimate", "Breast-cancer-wisconsin",
-            "Diabetes", "Iris", "Nhanes", "ObesityDataSet", "PIRSensor", "Students"
+            "Diabetes", "Iris", "Nhanes", "PIRSensor"
         ],
         key="dataset_select",
         on_change=reset_algos,
@@ -386,7 +396,6 @@ if st.session_state.get("confirmed"):
             fig.subplots_adjust(left=0.4, right=0.6, top=1.0, bottom=0.0)
             fig.patch.set_facecolor("none")
             st.pyplot(fig, use_container_width=False)
-
 
 
 
