@@ -90,7 +90,7 @@ with col1:
     dataset = st.selectbox(
     label="",
     options=[
-        "Bank", "BeijingClimate", "Breast-cancer-wisconsin",
+        "Bank", "BeijingClimate", "Breast-cancer-wisconsin", "CardioIsomap", "CoilDensmap",
         "Iris", "Nhanes", "ObesityDataSet", "PIRSensor"
     ],
     key="dataset_select",

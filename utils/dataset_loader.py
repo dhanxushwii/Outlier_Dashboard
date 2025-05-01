@@ -11,6 +11,11 @@ def load_dataset(name):
             return df
         elif name == "BeijingClimate":
             return pd.read_csv("datasets/BeijingClimate.csv")
+        elif name == "CardioIsomap":
+            return pd.read_json("datasets/CardioIsomap.json")
+        elif name == "CoilDensmap":
+            return pd.read_json("datasets/CoilDensmap.json")
+
         elif name == "Nhanes":
             return pd.read_csv("datasets/Nhanes.csv")
         elif name == "Students":
