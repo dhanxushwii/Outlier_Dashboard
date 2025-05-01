@@ -39,12 +39,11 @@ def run_algorithm(name, X):
     elif name == "LOF":
         model = LOF()
     elif name == "DBSCAN":
-        # DBSCAN returns labels directly
         labels = DBSCAN().fit_predict(X)
-        return np.where(labels == -1, 1.0, 0.0)  # Outlier = 1
+        return np.where(labels == -1, 1.0, 0.0)
 
     elif name == "ABOD":
-        model = ABOD()
+        model = ABOD(n_neighbors=20)
     elif name == "COPOD":
         model = COPOD()
     elif name == "ECOD":
@@ -75,18 +74,15 @@ def run_algorithm(name, X):
         model = MCD()
     elif name == "LMDD":
         model = LMDD()
-
     else:
         raise ValueError(f"Unknown algorithm: {name}")
 
     try:
         model.fit(X)
         scores = model.decision_scores_
+        print(f"[{name}] min={scores.min():.6f}, max={scores.max():.6f}, std={scores.std():.6f}")
     except Exception as e:
         print(f"[{name}] Fit error: {e}")
         scores = np.zeros(len(X))
-
-
-    print(f"[{name}] Score range: min={scores.min():.4f}, max={scores.max():.4f}, std={scores.std():.4f}")
 
     return scores
