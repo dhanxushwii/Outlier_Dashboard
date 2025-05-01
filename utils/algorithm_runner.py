@@ -30,6 +30,7 @@ def run_algorithm(name, X):
     name = name.upper()
     model = None
 
+    # --- Proximity-based ---
     if name == "CBLOF":
         model = CBLOF()
     elif name == "HBOS":
@@ -39,9 +40,17 @@ def run_algorithm(name, X):
     elif name == "LOF":
         model = LOF()
     elif name == "DBSCAN":
-        labels = DBSCAN().fit_predict(X)
-        return np.where(labels == -1, 1.0, 0.0)
+        try:
+            model = DBSCAN()
+            labels = model.fit_predict(X)
+            scores = np.where(labels == -1, 1.0, 0.0)  # Outliers = 1.0, Inliers = 0.0
+            print(f"[DBSCAN] #outliers: {(scores == 1.0).sum()} / {len(scores)}")
+            return scores
+        except Exception as e:
+            print(f"[DBSCAN ERROR] -> {e}")
+            return np.zeros(len(X))
 
+    # --- Probabilistic ---
     elif name == "ABOD":
         model = ABOD(n_neighbors=20)
     elif name == "COPOD":
@@ -53,6 +62,7 @@ def run_algorithm(name, X):
     elif name == "GMM":
         model = GMM()
 
+    # --- Ensemble ---
     elif name == "IFOREST":
         model = IForest()
     elif name in ["FEATUREBAGGING", "FB"]:
@@ -66,6 +76,7 @@ def run_algorithm(name, X):
     elif name == "INNE":
         model = INNE()
 
+    # --- Linear ---
     elif name == "PCA":
         model = PCA()
     elif name == "OCSVM":
@@ -74,6 +85,7 @@ def run_algorithm(name, X):
         model = MCD()
     elif name == "LMDD":
         model = LMDD()
+
     else:
         raise ValueError(f"Unknown algorithm: {name}")
 

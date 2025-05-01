@@ -1,3 +1,4 @@
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -14,7 +15,6 @@ from utils.algorithm_runner import run_algorithm
 st.set_page_config(page_title="Outlier Dashboard", layout="wide")
 
 # --- Styling ---
-#---"AirQualityUCI"
 st.markdown("""
 <h1 style='text-align: center; color: white; font-size: 32px; margin-bottom: 1rem;'>
     OutlierVisualizer: A Comparative Dashboard for Outlier Detection Algorithms
@@ -74,7 +74,7 @@ for key, default in [
 
 # --- Category setup ---
 categories = {
-    "Proximity-based": ["CBLOF", "HBOS", "KNN", "LOF", "DBSCA"],
+    "Proximity-based": ["CBLOF", "HBOS", "KNN", "LOF", "DBSCAN"],
     "Probabilistic": ["ABOD", "GMM", "KDE", "ECOD", "COPOD"],
     "Ensembles": ["FB", "IForest", "LSCP", "INNE"],
     "Linear Models": ["MCD", "OCSVM", "PCA", "LMDD"]
@@ -87,10 +87,16 @@ col1, col2, col3, col4 = st.columns([2, 4, 1.5, 1.5])
 # --- Dataset Selection ---
 with col1:
     st.markdown("<div class='highlight-header'>Dataset Selection</div>", unsafe_allow_html=True)
-    dataset = st.selectbox("Choose Dataset", [
+    dataset = st.selectbox(
+    label="",
+    options=[
         "Bank", "BeijingClimate", "Breast-cancer-wisconsin",
         "Iris", "Nhanes", "ObesityDataSet", "PIRSensor"
-    ], key="dataset_select")
+    ],
+    key="dataset_select",
+    label_visibility="collapsed"
+)
+
 
     if dataset and st.session_state.get("dataset") != dataset:
         st.session_state["confirmed"] = False
@@ -127,19 +133,27 @@ with col2:
             st.markdown(f"<div class='algo-group'><strong>{group}</strong></div>", unsafe_allow_html=True)
             selected_count = 0
             for algo in algos:
-                if st.checkbox(label=algo, key=f"{group}-{algo}"):
+                selected = st.checkbox(
+                    label=algo,
+                    key=f"{group}-{algo}",
+                    disabled=st.session_state["confirmed"]  # ✅ only disable checkboxes after "Explore"
+                )
+                if selected:
                     selected_count += 1
-            if selected_count != 2:
+            if not st.session_state["confirmed"] and selected_count != 2:
                 st.markdown("<span style='color:#facc15; font-size:13px;'>⚠️ Pick 2 algorithms</span>", unsafe_allow_html=True)
 
-# --- Heatmap + Colormap ---
+# --- Heatmap + Colormap (always active!) ---
 with col3:
     st.markdown("<div class='highlight-header'>Heatmap Techniques</div>", unsafe_allow_html=True)
-    st.radio("", ["raw", "threshold", "interpolated", "binary", "ranked"], key="heatmap_type", label_visibility="collapsed", index=None)
+    st.radio("", ["raw", "threshold", "interpolated", "binary", "ranked"],
+             key="heatmap_type", label_visibility="collapsed", index=None)
 
 with col4:
     st.markdown("<div class='highlight-header'>Colormap</div>", unsafe_allow_html=True)
-    st.radio("Select Colormap", ["viridis", "plasma", "terrain", "coolwarm", "turbo"], index=None, key="colormap")
+    st.radio("", ["viridis", "plasma", "terrain", "coolwarm", "turbo"],
+         index=None, key="colormap", label_visibility="collapsed")
+
 
 # --- Explore Button ---
 explore_disabled = not (
@@ -175,7 +189,6 @@ if st.session_state.get("confirmed") and st.session_state.get("heatmap_type"):
 
     def render_heatmap(X2d, scores, method, cmap, title):
         scores = (scores - scores.min()) / (scores.max() - scores.min() + 1e-8)
-
         if method == "threshold":
             scores = (scores >= np.percentile(scores, 95)).astype(float)
         elif method == "binary":
@@ -187,7 +200,6 @@ if st.session_state.get("confirmed") and st.session_state.get("heatmap_type"):
         xx, yy = np.meshgrid(gx, gy)
         interpolator = RBFInterpolator(X2d, scores, neighbors=20, smoothing=0.1)
         zz = interpolator(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
-
         if method in ["threshold", "interpolated", "ranked"]:
             zz = gaussian_filter(zz, sigma=1.5)
 
